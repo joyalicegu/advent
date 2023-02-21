@@ -1,8 +1,8 @@
-import itertools
-
 def parse_elves(filename):
     with open(filename) as f:
-        elves = {(r, c) for r, line in enumerate(f.read().splitlines()) for c, tile in enumerate(line) if tile == '#'}
+        elves = {(r, c)
+                 for r, line in enumerate(f.read().splitlines())
+                 for c, tile in enumerate(line) if tile == '#'}
         return elves
 
 DIRECTIONS = ['N', 'S', 'W', 'E']
@@ -42,46 +42,55 @@ def elf_neighbors_in_direction(elf, elves, direction):
             if neighbor in elves]
 
 def directions_for_round(current_round):
-    first_direction = current_round % len(DIRECTIONS)
-    return itertools.islice(itertools.cycle(DIRECTIONS),
-                            first_direction,
-                            first_direction + len(DIRECTIONS))
+    i = (current_round - 1) % len(DIRECTIONS)
+    return tuple(DIRECTIONS[i:len(DIRECTIONS)] + DIRECTIONS[0:i])
 
 def do_round(elves, current_round):
+    done = False
     # first half of round
-    proposals = dict() # regular dict, not a defaultdict
+    proposals = dict()
     for elf in elves:
-        # consider each direction
+        # if there are no adjacent elves, the elf does nothing
         if not elf_neighbors(elf, elves):
             continue
         # consider each direction
         for d in directions_for_round(current_round):
-            tmp = elf_neighbors_in_direction(elf, elves, d)
-            if not tmp:
+            if not elf_neighbors_in_direction(elf, elves, d):
                 proposal = MOVE[d](*elf)
                 if proposal not in proposals:
                     proposals[proposal] = []
                 proposals[proposal].append(elf)
                 break
     # second half of round
-    for proposal, contenders in proposals.items():
+    # a proposal is valid if there is only one contender
+    for proposal in list(proposals):
+        contenders = proposals[proposal]
         if len(contenders) == 1:
-            elf = contenders[0]
-            if elf not in proposals:
-                elves.remove(elf)
+            proposals[proposal] = contenders[0]
+        else:
+            proposals.pop(proposal, None)
+    # move elves
+    done = not proposals
+    for proposal, elf in proposals.items():
+        if elf not in proposals:
+            elves.remove(elf)
+        if proposal not in elves:
             elves.add(proposal)
-    return elves
+    return elves, done
 
-def do_rounds(elves, rounds, debug=False):
+def do_rounds(elves, start=1, rounds=None, debug=False):
     if debug:
         elf_count = len(elves)
-    for current_round in range(rounds):
-        elves = do_round(elves, current_round)
+    current_round = start
+    final = None if rounds is None else start + rounds - 1
+    done = False
+    while not done and (rounds is None or current_round <= final):
+        elves, done = do_round(elves, current_round)
         if debug:
-            print("end of round", current_round + 1)
-            print_elves(elves)
+            print(f"end of round {current_round} - score {score(elves)}")
             assert len(elves) == elf_count
-    return elves
+        current_round += 1
+    return elves, current_round - 1
 
 def bounding_box(elves): # inclusive-ends
     row_min = min((r for (r, c) in elves))
@@ -104,5 +113,7 @@ def score(elves):
     return (row_max - row_min + 1) * (col_max - col_min + 1) - len(elves)
 
 elves = parse_elves("input.txt")
-elves = do_rounds(elves, 10)
-print(score(elves))
+elves, final_round = do_rounds(elves, rounds=10)
+print(f"Part 1:", score(elves))
+elves, final_round = do_rounds(elves, start=11)
+print(f"Part 2:", final_round)
