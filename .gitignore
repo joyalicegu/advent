@@ -1,3 +1,7 @@
 .DS_Store
 input.txt
 test.txt
+Cargo.lock
+inputs/
+target/
+dayxx.rs
