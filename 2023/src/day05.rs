@@ -4,30 +4,59 @@ use std::cmp;
 
 pub struct Day05;
 
+type Range = (u32, u32);
+
 pub struct Almanac {
     seeds: Vec<u32>,
-    seed_ranges: Vec<(u32, u32)>,
+    seed_ranges: Vec<Range>,
     maps: Vec<Vec<(u32, u32, u32)>>,
 }
 
 impl Day05 {
-    fn apply_map(map: &Vec<(u32, u32, u32)>, value: u32) -> u32 {
-        // assume non-overlapping ranges
-        let range = match map.binary_search_by_key(&value, |t| t.1) {
-            Ok(i) => Some(map[i]),
-            Err(0) => None,
-            Err(i) => Some(map[i - 1]),
+    fn apply_map(map: &Vec<(u32, u32, u32)>, range: Range) -> Vec<Range> {
+        let (mut start, mut seeds) = range;
+        let mut i = match map.binary_search_by_key(&start, |t| t.1) {
+            Ok(i) => i,
+            Err(i) => i.saturating_sub(1),
         };
-        if let Some((dst, src, len)) = range {
-            if src <= value && (value - src) < len {
-                return (value - src) + dst;
+        let mut result = Vec::new();
+        loop {
+            if i >= map.len() {
+                result.push((start, seeds));
+                break;
             }
+            let (dst, src, len) = map[i];
+            let mapped_seeds;
+            if start < src {
+                mapped_seeds = cmp::min(src - start, seeds);
+                result.push((start, mapped_seeds));
+            } else if start - src < len {
+                mapped_seeds = cmp::min(len - (start - src), seeds);
+                result.push(((start - src) + dst, mapped_seeds));
+                i += 1;
+            } else {
+                // assume non-overlapping ranges
+                result.push((start, seeds));
+                break;
+            }
+            if seeds == mapped_seeds {
+                break;
+            }
+            start += mapped_seeds;
+            seeds -= mapped_seeds;
         }
-        value
+        result
     }
 
-    fn apply_maps(seed: u32, maps: &Vec<Vec<(u32, u32, u32)>>) -> u32 {
-        maps.iter().fold(seed, |acc, map| Self::apply_map(map, acc))
+    fn apply_maps(range: Range, maps: &Vec<Vec<(u32, u32, u32)>>) -> Vec<Range> {
+        maps.iter()
+            .fold(Vec::from([range]), |ranges: Vec<Range>, map| {
+                ranges
+                    .iter()
+                    .map(|&r| Self::apply_map(map, r))
+                    .flatten()
+                    .collect()
+            })
     }
 }
 
@@ -43,7 +72,7 @@ impl Solution for Day05 {
             .split_whitespace()
             .map(|s| s.parse::<u32>().unwrap())
             .collect();
-        let seed_ranges: Vec<(u32, u32)> = seeds.clone().into_iter().tuples().collect();
+        let seed_ranges: Vec<Range> = seeds.clone().into_iter().tuples().collect();
         let mut maps = Vec::new();
         for p in lines.split("\n\n").map(|p| p.split_once("\n").unwrap().1) {
             let mut map = Vec::new();
@@ -67,29 +96,21 @@ impl Solution for Day05 {
 
     fn part_one(_parsed_input: &mut Self::ParsedInput) -> String {
         let almanac = _parsed_input;
-        let apply = |seed: &u32| Self::apply_maps(*seed, &almanac.maps);
+        let apply = |&seed| Self::apply_maps((seed, 1), &almanac.maps)[0].0;
         almanac.seeds.iter().map(apply).min().unwrap().to_string()
     }
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
-        // TODO going fast is about doing less
         let almanac = _parsed_input;
-        let apply = |seed: &u32| Self::apply_maps(*seed, &almanac.maps);
-        let seeds = almanac
+        let apply = |&r| Self::apply_maps(r, &almanac.maps);
+        almanac
             .seed_ranges
             .iter()
-            .map(|(s, l)| *s..(s + l))
-            .flatten();
-        seeds
-            .fold(None, |acc, seed| {
-                let location = apply(&seed);
-                if let Some(prev) = acc {
-                    Some(cmp::min(prev, location))
-                } else {
-                    Some(location)
-                }
-            })
+            .map(apply)
+            .flatten()
+            .min()
             .unwrap()
+            .0
             .to_string()
     }
 }
