@@ -1,5 +1,6 @@
 use crate::Solution;
 use std::collections::HashMap;
+use std::iter::zip;
 
 pub struct Day13;
 
@@ -9,17 +10,28 @@ pub struct Pattern {
 }
 
 impl Day13 {
-    fn reflection_index(elements: &Vec<String>) -> Option<usize> {
-        let mut map: HashMap<(usize, usize), usize> = HashMap::new();
+    fn equal_with_smudge(a: &String, b: &String) -> bool {
+        zip(a.chars(), b.chars()).filter(|(a, b)| a != b).count() == 1
+    }
+
+    fn reflection_index(elements: &Vec<String>, with_smudge: bool) -> Option<usize> {
+        let mut map: HashMap<(usize, usize), (bool, usize)> = HashMap::new();
         let mut result = None;
+        let mut smudged_result = None;
         // adjacent pairs
         for i in 0..(elements.len() - 1) {
             let j = i + 1;
             let x = j;
             if elements[i] == elements[j] {
-                map.insert((i, j), x);
+                map.insert((i, j), (false, x));
                 if i == 0 || j == elements.len() - 1 {
                     result = Some(x);
+                }
+            }
+            if Self::equal_with_smudge(&elements[i], &elements[j]) {
+                map.insert((i, j), (true, x));
+                if i == 0 || j == elements.len() - 1 {
+                    smudged_result = Some(x);
                 }
             }
         }
@@ -27,22 +39,43 @@ impl Day13 {
         for k in (4..elements.len()).step_by(2) {
             for i in 0..(elements.len() - k + 1) {
                 let j = i + k - 1;
-                if let Some(&x) = map.get(&(i + 1, j - 1)) {
+                if let Some(&(smudged, x)) = map.get(&(i + 1, j - 1)) {
                     if elements[i] == elements[j] {
-                        map.insert((i, j), x);
+                        map.insert((i, j), (smudged, x));
                         if i == 0 || j == elements.len() - 1 {
-                            result = Some(x);
+                            if smudged {
+                                smudged_result = Some(x);
+                            } else {
+                                result = Some(x);
+                            }
+                        }
+                    }
+                    if !smudged && Self::equal_with_smudge(&elements[i], &elements[j]) {
+                        map.insert((i, j), (true, x));
+                        if i == 0 || j == elements.len() - 1 {
+                            smudged_result = Some(x);
                         }
                     }
                 }
             }
         }
-        result
+        if with_smudge {
+            smudged_result
+        } else {
+            result
+        }
     }
 
     fn find_reflection(pattern: &Pattern) -> (Option<usize>, Option<usize>) {
-        let h = Self::reflection_index(&pattern.rows);
-        let v = Self::reflection_index(&pattern.cols);
+        let h = Self::reflection_index(&pattern.rows, false);
+        let v = Self::reflection_index(&pattern.cols, false);
+        // println!("h={:?} v={:?}", h, v);
+        (h, v)
+    }
+
+    fn find_reflection_with_smudge(pattern: &Pattern) -> (Option<usize>, Option<usize>) {
+        let h = Self::reflection_index(&pattern.rows, true);
+        let v = Self::reflection_index(&pattern.cols, true);
         // println!("h={:?} v={:?}", h, v);
         (h, v)
     }
@@ -87,8 +120,13 @@ impl Solution for Day13 {
     }
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
-        "0".to_string()
-        // TODO
+        let patterns = _parsed_input;
+        patterns
+            .iter()
+            .map(Self::find_reflection_with_smudge)
+            .map(Self::summarize)
+            .sum::<usize>()
+            .to_string()
     }
 }
 
@@ -137,5 +175,10 @@ mod tests {
             ),
             "1100".to_string()
         )
+    }
+
+    #[test]
+    fn check_day13_part2_case1() {
+        assert_eq!(Day13::solve_part_two(TEST_INPUT), "400".to_string())
     }
 }
