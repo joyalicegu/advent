@@ -22,70 +22,58 @@ impl Day12 {
         )
     }
 
-    fn _ways(
-        row: &Vec<char>,
-        counts: &Vec<usize>,
-        j: usize,
-        count: Option<usize>,
-        cache: &mut HashMap<(Vec<char>, usize, Option<usize>), usize>,
-    ) -> usize {
-        // sorry, i know this isn't very attractive...
-        let key = (row.clone(), j, count);
-        let mut j = j;
-        let mut count = count;
-        if let Some(result) = cache.get(&key) {
-            return *result;
-        }
-        for i in 0..row.len() {
-            if row[i] == '#' {
-                if let Some(x) = count {
-                    count = Some(x + 1);
-                    if j >= counts.len() || (x + 1) > counts[j] {
-                        cache.insert(key, 0);
-                        return 0; // invalid
-                    }
-                } else {
-                    count = Some(1)
-                }
-            } else if row[i] == '.' {
-                if let Some(x) = count {
-                    if j >= counts.len() || x < counts[j] {
-                        cache.insert(key, 0);
-                        return 0; // invalid
-                    }
-                    j += 1;
-                    count = None;
-                }
-            } else if row[i] == '?' {
-                let mut result = 0;
-                let mut mut_row: Vec<char> = row[i..].to_vec();
-                // pick '#'
-                mut_row[0] = '#';
-                result += Self::_ways(&mut_row, &counts, j, count, cache);
-                // pick '.'
-                mut_row[0] = '.';
-                result += Self::_ways(&mut_row, &counts, j, count, cache);
-                cache.insert(key, result);
-                return result;
+    fn _initialize(counts: &Vec<usize>) -> (HashMap<(usize, char), usize>, usize) {
+        let mut transitions = HashMap::new();
+        let mut state = 0;
+        let mut first = true;
+        for &count in counts.iter() {
+            if first {
+                first = false;
+            } else {
+                transitions.insert((state, '.'), state + 1); // \.
+                state += 1;
+            }
+            transitions.insert((state, '.'), state); // \.*
+            for _ in 0..count {
+                transitions.insert((state, '#'), state + 1); // #
+                state += 1;
             }
         }
-        if let Some(x) = count {
-            if j >= counts.len() || x < counts[j] {
-                cache.insert(key, 0);
-                return 0; // invalid
-            }
-            j += 1;
-        }
-        if j != counts.len() {
-            cache.insert(key, 0);
-            return 0; // invalid
-        }
-        1 // populated and valid
+        transitions.insert((state, '.'), state); // \.*
+        (transitions, state + 1)
     }
 
+    fn _advance(
+        transitions: &HashMap<(usize, char), usize>,
+        positions: &Vec<usize>,
+        c: char,
+    ) -> Vec<usize> {
+        let mut new_positions: Vec<usize> = vec![0; positions.len()];
+        for (i, count) in positions.iter().enumerate() {
+            if c == '.' || c == '?' {
+                if let Some(&j) = transitions.get(&(i, '.')) {
+                    new_positions[j] += count;
+                }
+            }
+            if c == '#' || c == '?' {
+                if let Some(&j) = transitions.get(&(i, '#')) {
+                    new_positions[j] += count;
+                }
+            }
+        }
+        new_positions
+    }
+
+    // similar to:
+    // https://alexoxorn.github.io/posts/aoc-day12-regular_languages/
     fn ways(row: &Vec<char>, counts: &Vec<usize>) -> usize {
-        let mut cache = HashMap::new();
-        Self::_ways(row, counts, 0, None, &mut cache)
+        let (transitions, states) = Self::_initialize(counts);
+        let mut positions: Vec<usize> = vec![0; states];
+        positions[0] = 1;
+        for &c in row.iter() {
+            positions = Self::_advance(&transitions, &positions, c);
+        }
+        *positions.last().unwrap()
     }
 }
 
