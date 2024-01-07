@@ -117,6 +117,47 @@ impl Day16 {
         }
         energized
     }
+
+    fn initial_beams(rows: usize, cols: usize) -> Vec<Beam> {
+        let mut beams = Vec::new();
+        // top row, down
+        for c in 0..cols {
+            beams.push(Beam {
+                r: 0,
+                c: c,
+                dr: 1,
+                dc: 0,
+            })
+        }
+        // bottom row, up
+        for c in 0..cols {
+            beams.push(Beam {
+                r: rows - 1,
+                c: c,
+                dr: -1,
+                dc: 0,
+            })
+        }
+        // left column, right
+        for r in 0..rows {
+            beams.push(Beam {
+                r: r,
+                c: 0,
+                dr: 0,
+                dc: 1,
+            })
+        }
+        // right column, left
+        for r in 0..rows {
+            beams.push(Beam {
+                r: r,
+                c: cols - 1,
+                dr: 0,
+                dc: -1,
+            })
+        }
+        beams
+    }
 }
 
 impl Solution for Day16 {
@@ -141,8 +182,15 @@ impl Solution for Day16 {
     }
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
-        "0".to_string()
-        // TODO
+        let grid = _parsed_input;
+        let initial_beams = Self::initial_beams(grid.len(), grid[0].len());
+        // TODO do this more efficiently?
+        initial_beams
+            .iter()
+            .map(|&initial_beam| Self::energized_tiles(grid, initial_beam).len())
+            .max()
+            .unwrap()
+            .to_string()
     }
 }
 
