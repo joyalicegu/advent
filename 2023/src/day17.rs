@@ -65,21 +65,24 @@ impl PartialOrd for State {
 
 impl Day17 {
     fn move_n(
-        steps: isize,
+        steps: usize,
         d: Direction,
         r: usize,
         c: usize,
         bounds: (usize, usize),
     ) -> Option<(usize, usize)> {
         let (dr, dc) = d.offsets();
-        let (nr, nc) = (r as isize + dr * steps, c as isize + dc * steps);
+        let (nr, nc) = (
+            r as isize + dr * steps as isize,
+            c as isize + dc * steps as isize,
+        );
         if nr < 0 || nr >= bounds.0 as isize || nc < 0 || nc >= bounds.1 as isize {
             return None;
         }
         Some((nr as usize, nc as usize))
     }
 
-    fn least_heat_loss(grid: &Vec<Vec<u32>>) -> u32 {
+    fn least_heat_loss(grid: &Vec<Vec<u32>>, min_steps: usize, max_steps: usize) -> u32 {
         // dijkstra's algorithm?
         let (rows, cols) = (grid.len(), grid[0].len());
         let bounds = (rows, cols);
@@ -106,7 +109,7 @@ impl Day17 {
                 }
             }
             for nd in [d.left(), d.right()] {
-                for i in 1..=3 {
+                for i in min_steps..=max_steps {
                     if let Some((nr, nc)) = Self::move_n(i, nd, r, c, bounds) {
                         let cost = (1..=i)
                             .map(|j| {
@@ -151,12 +154,12 @@ impl Solution for Day17 {
 
     fn part_one(_parsed_input: &mut Self::ParsedInput) -> String {
         let grid = _parsed_input;
-        Self::least_heat_loss(grid).to_string()
+        Self::least_heat_loss(grid, 1, 3).to_string()
     }
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
-        "0".to_string()
-        // TODO
+        let grid = _parsed_input;
+        Self::least_heat_loss(grid, 4, 10).to_string()
     }
 }
 
@@ -181,5 +184,10 @@ mod tests {
     #[test]
     fn check_day17_part1_case1() {
         assert_eq!(Day17::solve_part_one(TEST_INPUT), "102".to_string())
+    }
+
+    #[test]
+    fn check_day17_part2_case1() {
+        assert_eq!(Day17::solve_part_two(TEST_INPUT), "94".to_string())
     }
 }
