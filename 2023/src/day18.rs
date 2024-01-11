@@ -51,30 +51,6 @@ impl Day18 {
         (r + dr * i, c + dc * i)
     }
 
-    fn is_counterclockwise(plan: &Vec<(Direction, isize)>) -> bool {
-        let mut turns = 0;
-        for (a, b) in plan
-            .iter()
-            .map(|&(d, _)| d)
-            .cycle()
-            .tuple_windows()
-            .take(plan.len())
-        {
-            turns += match (a, b) {
-                (Direction::Right, Direction::Down) => -1,
-                (Direction::Down, Direction::Left) => -1,
-                (Direction::Left, Direction::Up) => -1,
-                (Direction::Up, Direction::Right) => -1,
-                (Direction::Right, Direction::Up) => 1,
-                (Direction::Down, Direction::Right) => 1,
-                (Direction::Left, Direction::Down) => 1,
-                (Direction::Up, Direction::Left) => 1,
-                _ => 0,
-            };
-        }
-        turns > 0
-    }
-
     fn polygon(plan: &Vec<(Direction, isize)>) -> Vec<(isize, isize)> {
         let mut polygon = Vec::new();
         let mut point = (0, 0);
@@ -83,9 +59,6 @@ impl Day18 {
             polygon.push(point);
         }
         assert!(point == (0, 0));
-        if !Self::is_counterclockwise(plan) {
-            polygon.reverse();
-        }
         polygon
     }
 
@@ -96,14 +69,15 @@ impl Day18 {
     fn area(polygon: &Vec<(isize, isize)>) -> isize {
         // https://duckduckgo.com/?q=polygon+area+formula+from+coordinates
         // https://en.wikipedia.org/wiki/Shoelace_formula
-        polygon
+        (polygon
             .iter()
             .cycle()
             .tuple_windows()
             .take(polygon.len())
             .map(|((r, c), (nr, nc))| r * nc - nr * c)
             .sum::<isize>()
-            / 2
+            / 2)
+        .abs()
     }
 
     fn interior(area: isize, boundary: isize) -> isize {
