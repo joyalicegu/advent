@@ -120,8 +120,33 @@ impl Solution for Day22 {
     }
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
-        "0".to_string()
-        // TODO
+        let bricks = _parsed_input;
+        let supported_by = Self::supported_by(&bricks);
+        let mut graph = HashMap::new();
+        for (&k, vs) in supported_by.iter() {
+            for v in vs.iter() {
+                let entry = graph.entry(v).or_insert(HashSet::new());
+                entry.insert(k);
+            }
+        }
+        let mut result = 0;
+        for (&support, directs) in graph.iter() {
+            let mut fallen = HashSet::from([support]);
+            let mut stack = Vec::from_iter(directs);
+            while let Some(brick) = stack.pop() {
+                let Some(supports) = supported_by.get(brick) else {
+                    continue;
+                };
+                if supports.iter().all(|b| fallen.contains(b)) {
+                    fallen.insert(brick);
+                    if let Some(directs) = graph.get(brick) {
+                        stack.extend(directs);
+                    }
+                }
+            }
+            result += fallen.len() - 1;
+        }
+        result.to_string()
     }
 }
 
@@ -140,5 +165,10 @@ mod tests {
     #[test]
     fn check_day22_part1_case1() {
         assert_eq!(Day22::solve_part_one(TEST_INPUT), "5".to_string())
+    }
+
+    #[test]
+    fn check_day22_part2_case1() {
+        assert_eq!(Day22::solve_part_two(TEST_INPUT), "7".to_string())
     }
 }
