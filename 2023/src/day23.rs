@@ -65,7 +65,7 @@ impl Day23 {
         let (irows, icols) = (rows as isize, cols as isize);
         let start = Self::find_start(grid);
         let end = Self::find_end(grid);
-        let mut nodes = Vec::from([start, end]);
+        let mut nodes = HashSet::from([start, end]);
         for r in 1..(rows - 1) {
             for c in 1..(cols - 1) {
                 if grid[r][c] == '#' {
@@ -77,7 +77,7 @@ impl Day23 {
                         .filter(|&(nr, nc)| grid[nr][nc] != '#')
                         .collect();
                 if neighbors.len() > 2 {
-                    nodes.push((r, c));
+                    nodes.insert((r, c));
                 }
             }
         }
@@ -120,37 +120,32 @@ impl Day23 {
         start: (usize, usize),
         end: (usize, usize),
     ) -> usize {
-        let mut stack = Vec::from([(start, Vec::new(), HashSet::new(), 0)]);
+        let &(start, steps) = adj.get(&start).unwrap().iter().next().unwrap();
+        let mut stack = Vec::from([(start, steps, 0 as u64)]);
         let mut longest = 0;
-        let mut longest_history = None;
-        while let Some(state) = stack.pop() {
-            let (src, history, mut visited, length) = state;
-            if visited.contains(&src) {
-                continue;
-            }
-            visited.insert(src);
-            if src == end {
-                if length > longest {
-                    longest = length;
-                    longest_history = Some(history.clone());
-                }
-                continue;
-            }
+        let mut masks = HashMap::new();
+        for (i, k) in adj.keys().enumerate() {
+            masks.insert(k, 0x1 << i as u64);
+        }
+        while let Some((src, length, mut visited)) = stack.pop() {
             let Some(edges) = adj.get(&src) else {
                 continue;
             };
+            let m = masks.get(&src).unwrap();
+            if (visited & m) != 0 {
+                continue;
+            }
+            visited |= m;
             for &(dst, steps) in edges.iter() {
-                let mut history_ = history.clone();
-                history_.push((dst, steps));
-                stack.push((dst, history_, visited.clone(), length + steps));
+                if dst == end {
+                    if length + steps > longest {
+                        longest = length + steps;
+                    }
+                    break;
+                }
+                stack.push((dst, length + steps, visited));
             }
         }
-        let history = longest_history.unwrap();
-        println!("history:");
-        for (node, steps) in history.iter() {
-            println!("{:?} steps to {:?}", steps, node);
-        }
-        println!("longest: {:?}", longest);
         longest
     }
 }
