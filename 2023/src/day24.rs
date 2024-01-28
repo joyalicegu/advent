@@ -1,20 +1,17 @@
 use crate::Solution;
 use itertools::Itertools;
+use nalgebra::{Matrix3, Vector3};
 
 pub struct Day24;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Hailstone {
-    position: (isize, isize, isize),
-    velocity: (isize, isize, isize),
+    position: (i128, i128, i128),
+    velocity: (i128, i128, i128),
 }
 
 impl Day24 {
-    fn paths_intersect_2d(
-        a: Hailstone,
-        b: Hailstone,
-        test_area: (isize, isize, isize, isize),
-    ) -> bool {
+    fn paths_intersect_2d(a: Hailstone, b: Hailstone, test_area: (i128, i128, i128, i128)) -> bool {
         /* don't look
 
         p.x + v.x * t = q.x + w.x * s = x
@@ -74,10 +71,7 @@ impl Day24 {
         return min_x as f64 <= x && x <= max_x as f64 && min_y as f64 <= y && y <= max_y as f64;
     }
 
-    fn intersections_2d(
-        hailstones: &Vec<Hailstone>,
-        test_area: (isize, isize, isize, isize),
-    ) -> usize {
+    fn intersections_2d(hailstones: &Vec<Hailstone>, test_area: (i128, i128, i128, i128)) -> usize {
         let mut count = 0;
         for i in 0..hailstones.len() {
             for j in (i + 1)..hailstones.len() {
@@ -87,6 +81,106 @@ impl Day24 {
             }
         }
         count
+    }
+
+    fn exterior3(u: (i128, i128, i128), v: (i128, i128, i128), w: (i128, i128, i128)) -> i128 {
+        // like the scalar triple product
+        (u.0 * v.1 * w.2) + (u.1 * v.2 * w.0) + (u.2 * v.0 * w.1)
+            - (u.0 * v.2 * w.1)
+            - (u.1 * v.0 * w.2)
+            - (u.2 * v.1 * w.0)
+    }
+
+    fn exterior2(u: (i128, i128, i128), v: (i128, i128, i128)) -> (i128, i128, i128) {
+        // like the cross product
+        (
+            u.0 * v.1 - u.1 * v.0,
+            u.1 * v.2 - u.2 * v.1,
+            u.2 * v.0 - u.0 * v.2,
+        )
+    }
+
+    fn sub(u: (i128, i128, i128), v: (i128, i128, i128)) -> (i128, i128, i128) {
+        (u.0 - v.0, u.1 - v.1, u.2 - v.2)
+    }
+
+    fn calculate_rock_position(hailstones: &Vec<Hailstone>) -> (i128, i128, i128) {
+        // i gave up on this one, so this is not my solution:
+        // https://www.reddit.com/r/adventofcode/comments/18qgf10/2023_day_24_part_2_solved_as_a_3x3_linear_system/
+        //
+        // where Pi and Vi are the position and velocity of hailstone i
+        // and P and V are the position and velocity of the rock
+        // Pi + Vi * ti = P + V * ti
+        // =>
+        // (Pi - P) - (V - Vi) * ti = 0
+        //
+        // (Pi - P) and (V - Vi) are vectors, and for (Pi - P) and (V - Vi)
+        // to equal a scalar product of one another, they must be parallel,
+        // and wedge products of parallel vectors are zero, so:
+        // (Pi - P) ^ (V - Vi) = 0
+        //
+        // multiply it out
+        // (Pi ^ V) - (P ^ V) - (Pi ^ Vi) + (P ^ Vi) = 0
+        //
+        // remove (P ^ V) by subtracting with the equation for hailstone j
+        // ((Pi - Pj) ^ V) - (Pi ^ Vi) + (Pj ^ Vj) + (P ^ (Vi - Vj)) = 0
+        //
+        // get rid of ((Pi - Pj) ^ V) (because we don't care about the velocity)
+        // since u ^ v ^ u = 0 (since u is parallel to itself)
+        // =>
+        // (P ^ (Vi - Vj) ^ (Pi - Pj)) + Pi ^ Vi ^ Pj + Pj ^ Vj ^ Pi = 0
+        //
+        // 3 unknowns (the 3 dimensions of P) so we need 3 pairs
+        let mut equations = Vec::new();
+        for pair in (0..3).into_iter().combinations(2) {
+            let &[i, j] = pair.as_slice() else {
+                continue;
+            };
+            let (pi, vi, pj, vj) = (
+                hailstones[i].position,
+                hailstones[i].velocity,
+                hailstones[j].position,
+                hailstones[j].velocity,
+            );
+            let (a, b, c) = Self::exterior2(Self::sub(vi, vj), Self::sub(pi, pj));
+            let d = -(Self::exterior3(pi, vi, pj) + Self::exterior3(pj, vj, pi));
+            let equation = (a, b, c, d); // ax + by + cz = d
+            println!(
+                "{:?}x + {:?}y + {:?}z = {:?}",
+                equation.0, equation.1, equation.2, equation.3
+            );
+            equations.push(equation);
+        }
+        // then i actually just plugged these into wolfram alpha:
+        // https://www.wolframalpha.com/input?i=system+equation+calculator
+
+        // solve system of equations
+        let abc = Matrix3::new(
+            equations[0].0 as f64,
+            equations[0].1 as f64,
+            equations[0].2 as f64,
+            equations[1].0 as f64,
+            equations[1].1 as f64,
+            equations[1].2 as f64,
+            equations[2].0 as f64,
+            equations[2].1 as f64,
+            equations[2].2 as f64,
+        );
+        let d = Vector3::new(
+            equations[0].3 as f64,
+            equations[1].3 as f64,
+            equations[2].3 as f64,
+        );
+        let p: Vector3<f64> = abc.qr().solve(&d).unwrap();
+        println!("x={:?} y={:?} z={:?} (as f64s)", p.x, p.y, p.z);
+        // despite floating point error, we still get the right answer
+        let (x, y, z) = (
+            p.x.round() as i128,
+            p.y.round() as i128,
+            p.z.round() as i128,
+        );
+        println!("x={:?} y={:?} z={:?}", x, y, z);
+        (x, y, z)
     }
 }
 
@@ -101,12 +195,12 @@ impl Solution for Day24 {
                 Hailstone {
                     position: p_str
                         .split(", ")
-                        .map(|s| s.trim().parse::<isize>().unwrap())
+                        .map(|s| s.trim().parse::<i128>().unwrap())
                         .collect_tuple()
                         .unwrap(),
                     velocity: v_str
                         .split(", ")
-                        .map(|s| s.trim().parse::<isize>().unwrap())
+                        .map(|s| s.trim().parse::<i128>().unwrap())
                         .collect_tuple()
                         .unwrap(),
                 }
@@ -126,8 +220,9 @@ impl Solution for Day24 {
     }
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
-        "0".to_string()
-        // TODO
+        let hailstones = _parsed_input;
+        let (x, y, z) = Self::calculate_rock_position(&hailstones);
+        (x + y + z).to_string()
     }
 }
 
@@ -145,5 +240,10 @@ mod tests {
     fn check_day24_part1_case1() {
         let hailstones = Day24::parse_input(TEST_INPUT);
         assert_eq!(Day24::intersections_2d(&hailstones, (7, 27, 7, 27)), 2)
+    }
+
+    #[test]
+    fn check_day24_part2_case1() {
+        assert_eq!(Day24::solve_part_two(TEST_INPUT), "47".to_string())
     }
 }
