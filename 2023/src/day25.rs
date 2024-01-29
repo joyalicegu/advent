@@ -9,8 +9,8 @@ impl Day25 {
         graph: &HashMap<String, HashSet<String>>,
         vertices: &HashSet<String>,
     ) -> usize {
-        let total = graph.get(v).unwrap();
-        total.difference(vertices).count()
+        let neighbors = graph.get(v).unwrap();
+        neighbors.difference(vertices).count()
     }
 
     fn find_component_sizes(graph: &HashMap<String, HashSet<String>>) -> (usize, usize) {
@@ -59,8 +59,7 @@ impl Solution for Day25 {
     }
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
-        "0".to_string()
-        // TODO
+        "merry christmas".to_string()
     }
 }
 
