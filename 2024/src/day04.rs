@@ -30,6 +30,30 @@ impl Day04 {
         })
         .count()
     }
+
+    fn x_word_search(grid: &Vec<Vec<char>>, word: String) -> usize {
+        let (rows, cols) = (grid.len() as isize, grid[0].len() as isize);
+        let (ne, se, sw, nw) = ((-1, 1), (1, 1), (1, -1), (-1, -1));
+        iproduct!(
+            0..rows,
+            0..cols,
+            [(ne, se), (ne, nw), (sw, se), (sw, nw)].into_iter()
+        )
+        .filter(|(ir, ic, ((ur, uc), (vr, vc)))| {
+            word.chars().enumerate().all(|(i, x)| {
+                let j = (i as isize) - (word.len() / 2) as isize;
+                let ur = ir + ur * j;
+                let uc = ic + uc * j;
+                let vr = ir + vr * j;
+                let vc = ic + vc * j;
+                (0 <= ur && ur < rows && 0 <= uc && uc < cols)
+                    && grid[ur as usize][uc as usize] == x
+                    && (0 <= vr && vr < rows && 0 <= vc && vc < cols)
+                    && grid[vr as usize][vc as usize] == x
+            })
+        })
+        .count()
+    }
 }
 
 impl Solution for Day04 {
@@ -47,8 +71,7 @@ impl Solution for Day04 {
     }
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
-        "0".to_string()
-        // TODO
+        Self::x_word_search(_parsed_input, "MAS".to_string()).to_string()
     }
 }
 
@@ -70,5 +93,10 @@ MXMXAXMASX";
     #[test]
     fn check_day04_part1_case1() {
         assert_eq!(Day04::solve_part_one(TEST_INPUT), "18".to_string())
+    }
+
+    #[test]
+    fn check_day04_part2_case1() {
+        assert_eq!(Day04::solve_part_two(TEST_INPUT), "9".to_string())
     }
 }
