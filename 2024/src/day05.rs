@@ -13,6 +13,33 @@ impl Day05 {
             == 0
     }
 
+    fn ordered_if_incorrectly_ordered(
+        update: &Vec<u32>,
+        rules: &HashSet<(u32, u32)>,
+    ) -> Option<Vec<u32>> {
+        // bubblesort
+        let mut pages = update.to_vec();
+        let mut swaps = 0;
+        let mut swapped = true;
+        let mut n = pages.len();
+        while swapped {
+            swapped = false;
+            for i in 1..n {
+                if rules.contains(&(pages[i], pages[i - 1])) {
+                    (pages[i - 1], pages[i]) = (pages[i], pages[i - 1]);
+                    swapped = true;
+                    swaps += 1;
+                }
+            }
+            n -= 1;
+        }
+        if swaps == 0 {
+            None
+        } else {
+            Some(pages)
+        }
+    }
+
     fn middle_page_number(update: &Vec<u32>) -> u32 {
         update[update.len() / 2]
     }
@@ -50,8 +77,13 @@ impl Solution for Day05 {
     }
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
-        "0".to_string()
-        // TODO
+        let (rules, updates) = _parsed_input;
+        updates
+            .iter()
+            .filter_map(|u| Self::ordered_if_incorrectly_ordered(u, rules))
+            .map(|u| Self::middle_page_number(&u))
+            .sum::<u32>()
+            .to_string()
     }
 }
 
@@ -91,5 +123,10 @@ mod tests {
     #[test]
     fn check_day05_part1_case1() {
         assert_eq!(Day05::solve_part_one(TEST_INPUT), "143".to_string())
+    }
+
+    #[test]
+    fn check_day05_part2_case1() {
+        assert_eq!(Day05::solve_part_two(TEST_INPUT), "123".to_string())
     }
 }
