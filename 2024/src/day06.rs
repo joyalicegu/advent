@@ -33,37 +33,59 @@ impl Day06 {
         }
     }
 
-    fn patrol(grid: &Vec<Vec<char>>) -> Vec<(usize, usize)> {
-        let mut positions = Vec::new();
-        let (mut r, mut c) = Self::find_start(grid);
-        let (mut dr, mut dc): (isize, isize) = match grid[r][c] {
+    fn patrol(grid: &Vec<Vec<char>>) -> (HashSet<(usize, usize)>, HashSet<(usize, usize)>) {
+        let (rows, cols) = (grid.len(), grid[0].len());
+        let (r, c) = Self::find_start(grid);
+        let (dr, dc): (isize, isize) = match grid[r][c] {
             '>' => (0, 1),
             'v' => (1, 0),
             '<' => (0, -1),
             '^' => (-1, 0),
             _ => panic!("Invalid character"),
         };
-        let max_r = grid.len();
-        let max_c = grid[0].len();
-        loop {
-            positions.push((r, c)); // add current position to path
+        let mut stack = Vec::new();
+        stack.push(((r, c, dr, dc), HashSet::new(), None));
+        let mut positions = HashSet::new(); // positions visited when no candidate
+        let mut obstructions = HashSet::new(); // candidates that cause a loop
+        while let Some(state) = stack.pop() {
+            let ((r, c, mut dr, mut dc), mut visited, candidate) = state;
+            if visited.contains(&(r, c, dr, dc)) {
+                obstructions.insert(candidate.unwrap());
+                continue; // found a loop
+            }
+            visited.insert((r, c, dr, dc));
+            if candidate.is_none() {
+                positions.insert((r, c)); // normal path
+            }
             if (r == 0 && dr < 0)
                 || (c == 0 && dc < 0)
-                || (r == max_r - 1 && dr > 0)
-                || (c == max_c - 1 && dc > 0)
+                || (r == rows - 1 && dr > 0)
+                || (c == cols - 1 && dc > 0)
             {
-                break; // leaving the grid
+                continue; // leaving the grid
             }
             let (nr, nc) = ((r as isize + dr) as usize, (c as isize + dc) as usize);
-            if grid[nr][nc] == '#' {
+            if grid[nr][nc] == '#' || candidate == Some((nr, nc)) {
                 // encountered an obstacle
                 (dr, dc) = Self::turn_right(dr, dc);
-                (r, c) = ((r as isize + dr) as usize, (c as isize + dc) as usize);
+                stack.push(((r, c, dr, dc), visited.clone(), candidate));
             } else {
-                (r, c) = (nr, nc);
+                stack.push(((nr, nc, dr, dc), visited.clone(), candidate));
+                // pretend there's an obstacle
+                if candidate.is_none()
+                    && grid[nr][nc] != '#'
+                    && !visited.contains(&(nr, nc, 0, 1))
+                    && !visited.contains(&(nr, nc, 0, -1))
+                    && !visited.contains(&(nr, nc, 1, 0))
+                    && !visited.contains(&(nr, nc, -1, 0))
+                {
+                    (dr, dc) = Self::turn_right(dr, dc);
+                    stack.push(((r, c, dr, dc), visited.clone(), Some((nr, nc))));
+                }
             }
         }
-        positions
+        println!("{:?} {:?}", positions.len(), obstructions.len());
+        (positions, obstructions)
     }
 }
 
@@ -79,14 +101,12 @@ impl Solution for Day06 {
 
     fn part_one(_parsed_input: &mut Self::ParsedInput) -> String {
         let grid = _parsed_input;
-        HashSet::<(usize, usize)>::from_iter(Self::patrol(grid))
-            .len()
-            .to_string()
+        Self::patrol(grid).0.len().to_string()
     }
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
-        "0".to_string()
-        // TODO
+        let grid = _parsed_input;
+        Self::patrol(grid).1.len().to_string()
     }
 }
 
@@ -108,5 +128,10 @@ mod tests {
     #[test]
     fn check_day06_part1_case1() {
         assert_eq!(Day06::solve_part_one(TEST_INPUT), "41".to_string())
+    }
+
+    #[test]
+    fn check_day06_part2_case1() {
+        assert_eq!(Day06::solve_part_two(TEST_INPUT), "6".to_string())
     }
 }
