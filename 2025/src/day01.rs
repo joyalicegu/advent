@@ -3,22 +3,31 @@ use crate::Solution;
 pub struct Day01;
 
 impl Day01 {
-    fn follow_rotations(rotations: &Vec<i32>) -> usize {
+    fn follow_rotations(rotations: &Vec<i32>) -> (usize, usize) {
         let mut dial = 50;
-        let mut count = 0;
+        let mut end = 0;
+        let mut total = 0;
         for rotation in rotations.iter() {
-            dial += rotation;
-            while dial < 0 {
-                dial += 100;
-            }
-            while dial > 99 {
-                dial -= 100;
+            // do this the stupid way
+            let ticks = rotation.abs();
+            let tick = if *rotation < 0 { -1 } else { 1 };
+            for _ in 0..ticks {
+                dial += tick;
+                if dial < 0 {
+                    dial += 100;
+                }
+                if dial > 99 {
+                    dial -= 100;
+                }
+                if dial == 0 {
+                    total += 1;
+                }
             }
             if dial == 0 {
-                count += 1;
+                end += 1;
             }
         }
-        count
+        (end, total)
     }
 }
 
@@ -41,12 +50,12 @@ impl Solution for Day01 {
 
     fn part_one(_parsed_input: &mut Self::ParsedInput) -> String {
         let rotations = _parsed_input;
-        Self::follow_rotations(rotations).to_string()
+        Self::follow_rotations(rotations).0.to_string()
     }
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
-        "0".to_string()
-        // TODO
+        let rotations = _parsed_input;
+        Self::follow_rotations(rotations).1.to_string()
     }
 }
 
@@ -68,5 +77,10 @@ L82";
     #[test]
     fn check_day01_part1_case1() {
         assert_eq!(Day01::solve_part_one(TEST_INPUT), "3".to_string())
+    }
+
+    #[test]
+    fn check_day01_part2_case1() {
+        assert_eq!(Day01::solve_part_two(TEST_INPUT), "6".to_string())
     }
 }
