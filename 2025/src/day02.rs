@@ -9,33 +9,34 @@ impl Day02 {
         for (lo, hi) in ranges.iter() {
             // do this the dumb way first
             // generate them, and count them one at a time
-            // println!("\nlo {:?} hi {:?}", lo, hi);
+            println!("\nlo {:?} hi {:?}", lo, hi);
             let digits_low = lo.to_string().len();
             let digits_high = hi.to_string().len();
             for digits in digits_low..=digits_high {
-                let mut repeats = 2;
-                if digits % repeats != 0 {
-                    continue;
-                }
-                // println!("digits {:?}", digits);
-                let multiplier = 10_u32.pow((digits / repeats) as u32);
-                let mut n = multiplier / 10;
-                let mut nn = (0..repeats).map(|p| n * multiplier.pow(p as u32)).sum();
-                while nn < *lo {
-                    n += 1;
-                    if n > multiplier - 1 {
-                        break;
+                for repeats in 2..=digits {
+                    if digits % repeats != 0 {
+                        continue;
                     }
-                    nn = n * multiplier + n; // TODO
-                }
-                while *lo <= nn && nn <= *hi {
-                    // println!("{:?}", nn);
-                    result += nn;
-                    n += 1;
-                    if n > multiplier - 1 {
-                        break;
+                    println!("digits {:?} repeats {:?}", digits, repeats);
+                    let multiplier = 10_u32.pow((digits / repeats) as u32);
+                    let mut n = multiplier / 10;
+                    let mut nn = (0..repeats).map(|p| n * multiplier.pow(p as u32)).sum();
+                    while nn < *lo {
+                        n += 1;
+                        if n > multiplier - 1 {
+                            break;
+                        }
+                        nn = (0..repeats).map(|p| n * multiplier.pow(p as u32)).sum();
                     }
-                    nn = n * multiplier + n; // TODO
+                    while *lo <= nn && nn <= *hi {
+                        // println!("{:?}", nn);
+                        result += nn;
+                        n += 1;
+                        if n > multiplier - 1 {
+                            break;
+                        }
+                        nn = (0..repeats).map(|p| n * multiplier.pow(p as u32)).sum();
+                    }
                 }
             }
         }
