@@ -1,4 +1,15 @@
 pub mod day01;
+pub mod day02;
+// pub mod day03;
+// pub mod day04;
+// pub mod day05;
+// pub mod day06;
+// pub mod day07;
+// pub mod day08;
+// pub mod day09;
+// pub mod day10;
+// pub mod day11;
+// pub mod day12;
 
 pub trait Solution {
     type ParsedInput;
@@ -48,7 +59,7 @@ pub trait Solution {
 pub fn solve_day(day: &i32, include_time: bool) {
     match day {
         1 => day01::Day01::solve(include_str!("../inputs/01"), include_time),
-        // 2 => day02::Day02::solve(include_str!("../inputs/02"), include_time),
+        2 => day02::Day02::solve(include_str!("../inputs/02"), include_time),
         // 3 => day03::Day03::solve(include_str!("../inputs/03"), include_time),
         // 4 => day04::Day04::solve(include_str!("../inputs/04"), include_time),
         // 5 => day05::Day05::solve(include_str!("../inputs/05"), include_time),
