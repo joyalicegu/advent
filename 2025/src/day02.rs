@@ -4,27 +4,29 @@ use itertools::Itertools;
 pub struct Day02;
 
 impl Day02 {
-    fn sum_invalid_ids(ranges: &Vec<(usize, usize)>) -> usize {
-        // i threw away my notes oops
-        // 123123 + 987987 = 1111110
+    fn sum_invalid_ids(ranges: &Vec<(u32, u32)>) -> u32 {
         let mut result = 0;
         for (lo, hi) in ranges.iter() {
             // do this the dumb way first
             // generate them, and count them one at a time
             // println!("\nlo {:?} hi {:?}", lo, hi);
-            let digits_low = (lo.to_string().len() / 2) * 2;
-            let digits_high = (hi.to_string().len() / 2) * 2;
+            let digits_low = lo.to_string().len();
+            let digits_high = hi.to_string().len();
             for digits in digits_low..=digits_high {
+                let mut repeats = 2;
+                if digits % repeats != 0 {
+                    continue;
+                }
                 // println!("digits {:?}", digits);
-                let multiplier = 10_u32.pow(digits as u32 / 2) as usize;
+                let multiplier = 10_u32.pow((digits / repeats) as u32);
                 let mut n = multiplier / 10;
-                let mut nn = n * multiplier + n;
+                let mut nn = (0..repeats).map(|p| n * multiplier.pow(p as u32)).sum();
                 while nn < *lo {
                     n += 1;
                     if n > multiplier - 1 {
                         break;
                     }
-                    nn = n * multiplier + n;
+                    nn = n * multiplier + n; // TODO
                 }
                 while *lo <= nn && nn <= *hi {
                     // println!("{:?}", nn);
@@ -33,7 +35,7 @@ impl Day02 {
                     if n > multiplier - 1 {
                         break;
                     }
-                    nn = n * multiplier + n;
+                    nn = n * multiplier + n; // TODO
                 }
             }
         }
@@ -42,7 +44,7 @@ impl Day02 {
 }
 
 impl Solution for Day02 {
-    type ParsedInput = Vec<(usize, usize)>;
+    type ParsedInput = Vec<(u32, u32)>;
 
     fn parse_input(input_lines: &str) -> Self::ParsedInput {
         input_lines
@@ -52,7 +54,7 @@ impl Solution for Day02 {
             .split(",")
             .map(|l| {
                 l.split("-")
-                    .map(|n| n.parse::<usize>().unwrap())
+                    .map(|n| n.parse::<u32>().unwrap())
                     .collect_tuple()
                     .unwrap()
             })
