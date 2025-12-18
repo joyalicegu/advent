@@ -3,19 +3,24 @@ use crate::Solution;
 pub struct Day03;
 
 impl Day03 {
-    fn total_output_joltage(banks: &Vec<Vec<u32>>) -> u32 {
-        let mut total = 0;
-        for bank in banks.iter() {
-            let mut max_joltage = 0;
-            for i in 0..(bank.len() - 1) {
-                for j in (i + 1)..bank.len() {
-                    let joltage = bank[i] * 10 + bank[j];
-                    if joltage > max_joltage {
-                        max_joltage = joltage;
-                    }
+    fn max_joltage(bank: &Vec<u32>, count: usize) -> u32 {
+        let mut max_joltage = 0;
+        // TODO handle count of 12
+        for i in 0..(bank.len() - 1) {
+            for j in (i + 1)..bank.len() {
+                let joltage = bank[i] * 10 + bank[j];
+                if joltage > max_joltage {
+                    max_joltage = joltage;
                 }
             }
-            total += max_joltage;
+        }
+        max_joltage
+    }
+
+    fn total_output_joltage(banks: &Vec<Vec<u32>>, count: usize) -> u32 {
+        let mut total = 0;
+        for bank in banks.iter() {
+            total += Self::max_joltage(bank, count);
         }
         total
     }
@@ -32,12 +37,11 @@ impl Solution for Day03 {
     }
 
     fn part_one(_parsed_input: &mut Self::ParsedInput) -> String {
-        Self::total_output_joltage(&_parsed_input).to_string()
+        Self::total_output_joltage(&_parsed_input, 2).to_string()
     }
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
-        "0".to_string()
-        // TODO
+        Self::total_output_joltage(&_parsed_input, 12).to_string()
     }
 }
 
@@ -53,5 +57,13 @@ mod tests {
     #[test]
     fn check_day03_part1_case1() {
         assert_eq!(Day03::solve_part_one(TEST_INPUT), "357".to_string())
+    }
+
+    #[test]
+    fn check_day03_part2_case1() {
+        assert_eq!(
+            Day03::solve_part_two(TEST_INPUT),
+            "3121910778619".to_string()
+        )
     }
 }
