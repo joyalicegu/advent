@@ -29,15 +29,17 @@ impl Day04 {
         adj
     }
 
-    fn accessible(adj: &HashMap<(usize, usize), HashSet<(usize, usize)>>, k: usize) -> usize {
-        let mut count = 0;
-        for (node, neighbors) in adj {
-            println!("node: {:?}, neighbors: {:?}", node, neighbors);
+    fn accessible(
+        adj: &HashMap<(usize, usize), HashSet<(usize, usize)>>,
+        k: usize,
+    ) -> Vec<(usize, usize)> {
+        let mut result = Vec::new();
+        for (&node, neighbors) in adj {
             if neighbors.len() < k {
-                count += 1;
+                result.push(node);
             }
         }
-        count
+        result
     }
 
     fn k_core(
@@ -45,7 +47,27 @@ impl Day04 {
         k: usize,
     ) -> HashMap<(usize, usize), HashSet<(usize, usize)>> {
         // https://en.wikipedia.org/wiki/Degeneracy_(graph_theory)#k-Cores
-        HashMap::new() // TODO
+        // TODO fix part 2
+        let mut result = HashMap::new();
+        result.clone_from(adj);
+        loop {
+            let nodes = Self::accessible(&result, k);
+            if nodes.is_empty() {
+                break;
+            }
+            for node in nodes {
+                let neighbors: Vec<(usize, usize)> =
+                    result.get(&node).unwrap().clone().into_iter().collect();
+                for neighbor in neighbors {
+                    result
+                        .entry(neighbor)
+                        .or_insert(HashSet::new())
+                        .remove(&node);
+                }
+                result.remove(&node);
+            }
+        }
+        result
     }
 }
 
@@ -62,12 +84,14 @@ impl Solution for Day04 {
 
     fn part_one(_parsed_input: &mut Self::ParsedInput) -> String {
         let adj = _parsed_input;
-        Self::accessible(adj, 4).to_string()
+        Self::accessible(adj, 4).len().to_string()
     }
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
         let adj = _parsed_input;
-        Self::k_core(adj, 4).keys().len().to_string()
+        let before = adj.keys().len();
+        let after = Self::k_core(adj, 4).keys().len();
+        (before - after).to_string()
     }
 }
 
@@ -93,6 +117,6 @@ mod tests {
 
     #[test]
     fn check_day04_part2_case1() {
-        assert_eq!(Day04::solve_part_one(TEST_INPUT), "43".to_string())
+        assert_eq!(Day04::solve_part_two(TEST_INPUT), "43".to_string())
     }
 }
