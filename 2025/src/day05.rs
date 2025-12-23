@@ -1,5 +1,7 @@
 use crate::Solution;
 use itertools::Itertools;
+use std::cmp;
+use std::collections::VecDeque;
 
 pub struct Day05;
 
@@ -12,6 +14,41 @@ impl Day05 {
                     result.push(id);
                     break;
                 }
+            }
+        }
+        result
+    }
+
+    fn overlapping(u: (u64, u64), v: (u64, u64)) -> bool {
+        cmp::max(u.0, v.0) <= cmp::min(u.1, v.1)
+    }
+
+    fn merge(u: (u64, u64), v: (u64, u64)) -> Option<(u64, u64)> {
+        if Self::overlapping(u, v) {
+            Some((cmp::min(u.0, v.0), cmp::max(u.1, v.1)))
+        } else {
+            None
+        }
+    }
+
+    fn merge_overlapping(ranges: &Vec<(u64, u64)>) -> Vec<(u64, u64)> {
+        let mut queue = VecDeque::<(u64, u64)>::from(ranges.clone());
+        let mut result = Vec::new();
+        while let Some(mut u) = queue.pop_front() {
+            let mut merges = 0;
+            for _ in 0..queue.len() {
+                let v = queue.pop_front().unwrap();
+                if let Some(uv) = Self::merge(u, v) {
+                    u = uv;
+                    merges += 1;
+                } else {
+                    queue.push_back(v);
+                }
+            }
+            if merges > 0 {
+                queue.push_back(u);
+            } else {
+                result.push(u);
             }
         }
         result
@@ -45,8 +82,12 @@ impl Solution for Day05 {
     }
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
-        "0".to_string()
-        // TODO
+        let (ranges, _) = _parsed_input;
+        Self::merge_overlapping(&ranges)
+            .iter()
+            .map(|&(a, b)| b - a + 1)
+            .sum::<u64>()
+            .to_string()
     }
 }
 
@@ -69,5 +110,10 @@ mod tests {
     #[test]
     fn check_day05_part1_case1() {
         assert_eq!(Day05::solve_part_one(TEST_INPUT), "3".to_string())
+    }
+
+    #[test]
+    fn check_day05_part2_case1() {
+        assert_eq!(Day05::solve_part_two(TEST_INPUT), "14".to_string())
     }
 }
