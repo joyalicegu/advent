@@ -19,6 +19,7 @@ impl Day04 {
                 if grid[r][c] != '@' {
                     continue;
                 }
+                adj.insert((r, c), HashSet::new());
                 for &(nr, nc) in Self::neighbors(r, c, rows, cols).iter() {
                     if grid[nr][nc] == '@' {
                         adj.entry((r, c)).or_insert(HashSet::new()).insert((nr, nc));
@@ -47,18 +48,16 @@ impl Day04 {
         k: usize,
     ) -> HashMap<(usize, usize), HashSet<(usize, usize)>> {
         // https://en.wikipedia.org/wiki/Degeneracy_(graph_theory)#k-Cores
-        // TODO fix part 2
-        let mut result = HashMap::new();
-        result.clone_from(adj);
+        let mut result = adj.clone();
         loop {
             let nodes = Self::accessible(&result, k);
             if nodes.is_empty() {
                 break;
             }
+            // println!("{:?}", nodes.len());
             for node in nodes {
-                let neighbors: Vec<(usize, usize)> =
-                    result.get(&node).unwrap().clone().into_iter().collect();
-                for neighbor in neighbors {
+                let neighbors: HashSet<(usize, usize)> = result.get(&node).unwrap().clone();
+                for neighbor in neighbors.into_iter() {
                     result
                         .entry(neighbor)
                         .or_insert(HashSet::new())
@@ -118,5 +117,17 @@ mod tests {
     #[test]
     fn check_day04_part2_case1() {
         assert_eq!(Day04::solve_part_two(TEST_INPUT), "43".to_string())
+    }
+
+    #[test]
+    fn check_day04_part2_case2() {
+        assert_eq!(
+            Day04::solve_part_two(
+                "...
+.@.
+..."
+            ),
+            "1".to_string()
+        )
     }
 }
