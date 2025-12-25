@@ -5,7 +5,7 @@ pub mod day04;
 pub mod day05;
 pub mod day06;
 pub mod day07;
-// pub mod day08;
+pub mod day08;
 // pub mod day09;
 // pub mod day10;
 // pub mod day11;
@@ -65,7 +65,7 @@ pub fn solve_day(day: &i32, include_time: bool) {
         5 => day05::Day05::solve(include_str!("../inputs/05"), include_time),
         6 => day06::Day06::solve(include_str!("../inputs/06"), include_time),
         7 => day07::Day07::solve(include_str!("../inputs/07"), include_time),
-        // 8 => day08::Day08::solve(include_str!("../inputs/08"), include_time),
+        8 => day08::Day08::solve(include_str!("../inputs/08"), include_time),
         // 9 => day09::Day09::solve(include_str!("../inputs/09"), include_time),
         // 10 => day10::Day10::solve(include_str!("../inputs/10"), include_time),
         // 11 => day11::Day11::solve(include_str!("../inputs/11"), include_time),
