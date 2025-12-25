@@ -8,8 +8,11 @@ pub struct Day08;
 impl Day08 {
     fn circuits(
         junctions: &Vec<(usize, usize, usize)>,
-        connections: usize,
-    ) -> Vec<Vec<(usize, usize, usize)>> {
+        limit: Option<usize>,
+    ) -> (
+        Vec<Vec<(usize, usize, usize)>>,
+        Vec<((usize, usize, usize), (usize, usize, usize))>,
+    ) {
         let mut circuits: Vec<Vec<(usize, usize, usize)>> = junctions
             .iter()
             .map(|&junction| Vec::from([junction]))
@@ -32,14 +35,21 @@ impl Day08 {
         }
         pairs.sort();
         pairs.reverse();
-        let mut connections_made = 0;
-        while connections_made < connections {
+        let mut log = Vec::new();
+        let mut total_circuits = circuits.len();
+        loop {
+            if limit.is_some() && log.len() >= limit.unwrap() {
+                break;
+            }
+            if limit.is_none() && total_circuits == 1 {
+                break;
+            }
             let (_, u, v) = pairs.pop().unwrap();
             let i = junction_to_circuit[&u];
             let j = junction_to_circuit[&v];
             // println!("-------------------------------");
             // println!("connecting {:?} and {:?}", u, v);
-            connections_made += 1;
+            log.push((u, v));
             if i == j {
                 continue;
             }
@@ -58,6 +68,7 @@ impl Day08 {
             for junction in circuits[dst].iter() {
                 junction_to_circuit.insert(*junction, dst);
             }
+            total_circuits -= 1;
         }
         // println!("-------------------------------");
         circuits = circuits
@@ -68,7 +79,7 @@ impl Day08 {
         // println!("{:?}", circuit);
         // }
         // println!("{:?} circuits", circuits.len());
-        circuits
+        (circuits, log)
     }
 }
 
@@ -89,7 +100,8 @@ impl Solution for Day08 {
 
     fn part_one(_parsed_input: &mut Self::ParsedInput) -> String {
         let junctions = _parsed_input;
-        Self::circuits(junctions, 1000)
+        Self::circuits(junctions, Some(1000))
+            .0
             .iter()
             .map(|circuit| circuit.len())
             .sorted()
@@ -100,8 +112,16 @@ impl Solution for Day08 {
     }
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
-        "0".to_string()
-        // TODO
+        let junctions = _parsed_input;
+        Self::circuits(junctions, None)
+            .1
+            .iter()
+            .rev()
+            .take(1)
+            .map(|(u, v)| u.0 * v.0)
+            .next()
+            .unwrap()
+            .to_string()
     }
 }
 
@@ -134,7 +154,8 @@ mod tests {
     fn check_day08_part1_case1() {
         let junctions = &mut Day08::parse_input(TEST_INPUT);
         assert_eq!(
-            Day08::circuits(junctions, 10)
+            Day08::circuits(junctions, Some(10))
+                .0
                 .iter()
                 .map(|circuit| circuit.len())
                 .sorted()
@@ -143,6 +164,23 @@ mod tests {
                 .product::<usize>()
                 .to_string(),
             "40".to_string()
+        )
+    }
+
+    #[test]
+    fn check_day08_part2_case1() {
+        let junctions = &mut Day08::parse_input(TEST_INPUT);
+        assert_eq!(
+            Day08::circuits(junctions, None)
+                .1
+                .iter()
+                .rev()
+                .take(1)
+                .map(|(u, v)| u.0 * v.0)
+                .next()
+                .unwrap()
+                .to_string(),
+            "25272".to_string()
         )
     }
 }
