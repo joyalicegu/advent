@@ -1,5 +1,6 @@
 use crate::Solution;
 use itertools::Itertools;
+use std::cmp;
 
 pub struct Day09;
 
@@ -11,6 +12,20 @@ impl Day09 {
             .map(|(a, b)| ((a.0 - b.0 + 1) * (a.1 - b.1 + 1)).abs())
             .max()
             .expect("corners.len() should be at least 2")
+    }
+
+    fn edges(polygon: &Vec<(isize, isize)>) -> Vec<((isize, isize), (isize, isize))> {
+        polygon
+            .clone()
+            .into_iter()
+            .cycle()
+            .tuple_windows()
+            .take(polygon.len())
+            .collect()
+    }
+
+    fn largest_area_in_polygon(corners: &Vec<(isize, isize)>) -> isize {
+        0 // TODO
     }
 }
 
@@ -35,8 +50,8 @@ impl Solution for Day09 {
     }
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
-        "0".to_string()
-        // TODO
+        let corners = _parsed_input;
+        Self::largest_area_in_polygon(corners).to_string()
     }
 }
 
@@ -56,5 +71,10 @@ mod tests {
     #[test]
     fn check_day09_part1_case1() {
         assert_eq!(Day09::solve_part_one(TEST_INPUT), "50".to_string())
+    }
+
+    #[test]
+    fn check_day09_part2_case1() {
+        assert_eq!(Day09::solve_part_two(TEST_INPUT), "24".to_string())
     }
 }
