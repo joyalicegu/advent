@@ -9,7 +9,7 @@ struct Cli {
 
 fn main() {
     let cli = Cli::parse();
-    let days = (1..=25).collect::<Vec<i32>>();
+    let days = (1..=12).collect::<Vec<i32>>();
     let mut days_to_execute = vec![];
     if let Some(day) = cli.day {
         if !days.contains(&day) {
