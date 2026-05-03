@@ -14,6 +14,11 @@ impl Day09 {
             .expect("corners.len() should be at least 2")
     }
 
+    // TODO nvm
+    // TODO just do coordinate compression
+    // TODO and flood fill to color green tiles
+    // TODO and then just brute force check all tiles in each rectangle
+
     fn edges(polygon: &Vec<(isize, isize)>) -> Vec<((isize, isize), (isize, isize))> {
         // cribbed from area() from my 2023 day 18
         polygon
